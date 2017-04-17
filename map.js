@@ -48,6 +48,9 @@ class MapRender extends React.Component{
 		this.addMarkerPins = this.addMarkerPins.bind(this);
 		this.currentLocation = this.currentLocation.bind(this);
 		this.initMap = this.initMap.bind(this);
+		this.setkeyBoad = this.setkeyBoad.bind(this);
+		this.state = {map: null, enable: false};
+		// this.cauculateDistance = this.cauculateDistance.bind(this.currentLocation);
 	}
 
 	currentLocation (){
@@ -61,7 +64,7 @@ class MapRender extends React.Component{
 	};//end function
 
 
-	addMarkerPins(map, lat, long){
+	addMarkerPins(map, lat, long, title = null){
 		var markerOptions = {
 	        icon: tomtom.L.icon({
 	            iconUrl: "tomtom/images/marker.png",
@@ -69,38 +72,86 @@ class MapRender extends React.Component{
 	            iconAnchor: [15, 34]
 	        })
   	  	};
-		tomtom.L.marker([lat, long], markerOptions).addTo(map);
-	}//end function
-	
-
-	initMap(mapobject){
-   		var	mymap = tomtom.L.map('mapid', {key:"OoB0oTRra3j9NWlkE9pncBVFRVAjlYwp"});
-		
-		// this.currentLocation().then(function (res){
-		// 	mymap.setView([39, -97.5], 4);
-		// });	
-
-		mymap.setView([39, -97.5], 4);
-		mymap._container.focus();
-    	
-		return mymap;
+		tomtom.L.marker([lat, long], markerOptions).addTo(map).bindPopup(title + " => " + lat +" || " + long);
 	};//end function
 
 
+
+	initMap(mapobject){
+   		var	mymap = tomtom.L.map('mapid', {key:"OoB0oTRra3j9NWlkE9pncBVFRVAjlYwp"});
+		var markers = tomtom.L.markerClusterGroup();
+
+		this.currentLocation().then(function (res){
+			
+			var markerOptions = {
+		        icon: tomtom.L.icon({
+		            iconUrl: "tomtom/images/locate_me_btn.png",
+		            iconSize: [30, 30],
+		            iconAnchor: [15, 15]
+		        })
+	  	  	};
+
+			var marker = tomtom.L.marker([res.coords.latitude, res.coords.longitude], markerOptions).addTo(mymap);
+			
+			marker.bindPopup("My Posistion: "+ res.coords.latitude + " || "+ res.coords.longitude);
+
+			mymap.setView([res.coords.latitude, res.coords.longitude], 14);
+
+	  		var point = L.latLng(res.coords.latitude, res.coords.longitude);
+
+	  		console.log("point",point.distanceTo([-3.00614, -60.02575]));
+	  		//return the distance bet two points
+			console.log(mymap.distance([res.coords.latitude, res.coords.longitude], [-3.00614, -60.02575]));
+		
+		});	
+
+
+		mymap.on('click', function (e){
+			 tomtom.L.popup().setLatLng(e.latlng).setContent(e.latlng.toString()).openOn(mymap);
+		});
+
+		
+		mymap._container.focus();
+		this.setState({map: mymap});
+		return mymap;
+	};//end function
+
+	setkeyBoad(){
+		 this.setState(prevState => ({
+      		enable: !prevState.enable
+    	}));
+		
+		var map = this.state.map;
+		if(this.state.enable == false){
+			map.keyboard.disable();
+			
+		}else{
+			map.keyboard.enable();
+			map._container.focus();
+		}
+		// console.log("teste", map);
+	}
+
 	componentDidMount(){
 		var map = this.initMap();
-		this.addMarkerPins(map, 43.26456, -71.5702);
-		this.addMarkerPins(map, 39.73845, -104.98485);
-		this.addMarkerPins(map, 34.05224, -118.24334);
-	
-	}
+		// console.log(map.keyboard);
+		// map.keyboard.disable();
+		// console.log("state",this.state.map);
+		
+		this.addMarkerPins(map, -3.01205, -60.01592, "Sao Chico");
+		this.addMarkerPins(map,-3.02776, -60.01493, "Novo Israel");
+		this.addMarkerPins(map, -3.00317, -59.99174, "Monte das Oliveiras");
+
+	};
 	
 	render(){
 
 		return (
 			<div id='container' >
 				<div id='mapid'></div>
+				<button onClick={this.setkeyBoad}>{this.state.enable == true ? "Enable": "Disable"}</button>
 			</div>
+
 		)
 
 
