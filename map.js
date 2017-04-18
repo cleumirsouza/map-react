@@ -49,7 +49,8 @@ class MapRender extends React.Component{
 		this.currentLocation = this.currentLocation.bind(this);
 		this.initMap = this.initMap.bind(this);
 		this.setkeyBoad = this.setkeyBoad.bind(this);
-		this.state = {map: null, enable: false};
+		this.state = {map: null, enable: false, currentLocation : []};
+		// this.setLocation = this.setLocation.bind(this);
 		// this.cauculateDistance = this.cauculateDistance.bind(this.currentLocation);
 	}
 
@@ -65,54 +66,46 @@ class MapRender extends React.Component{
 
 
 	addMarkerPins(map, lat, long, title = null){
-		var markerOptions = {
-	        icon: tomtom.L.icon({
-	            iconUrl: "tomtom/images/marker.png",
-	            iconSize: [30, 34],
-	            iconAnchor: [15, 34]
-	        })
-  	  	};
-		tomtom.L.marker([lat, long], markerOptions).addTo(map).bindPopup(title + " => " + lat +" || " + long);
+		var location = new L.LatLng(lat, long);
+		var marker = new L.marker(location, {title: title, opacity: 0.5});
+		map.addLayer(marker);
 	};//end function
 
-
+	// setLocation(location){
+	// 	this.setState({currentLocation: location});
+	// }
 
 	initMap(mapobject){
    		var	mymap = tomtom.L.map('mapid', {key:"OoB0oTRra3j9NWlkE9pncBVFRVAjlYwp"});
 		var markers = tomtom.L.markerClusterGroup();
 
 		this.currentLocation().then(function (res){
-			
-			var markerOptions = {
-		        icon: tomtom.L.icon({
-		            iconUrl: "tomtom/images/locate_me_btn.png",
-		            iconSize: [30, 30],
-		            iconAnchor: [15, 15]
-		        })
-	  	  	};
-
-			var marker = tomtom.L.marker([res.coords.latitude, res.coords.longitude], markerOptions).addTo(mymap);
-			
-			marker.bindPopup("My Posistion: "+ res.coords.latitude + " || "+ res.coords.longitude);
-
-			mymap.setView([res.coords.latitude, res.coords.longitude], 14);
-
+			//markerLocation
+	  	  	var userLocation = new L.LatLng(res.coords.latitude, res.coords.longitude);
+	  	  	var marker = new L.marker(userLocation, {title:"mylocation", opacity: 1});
+	  	  	mymap.addLayer(marker);
+	  	  	// 
+	  	  	
+	  	  	//set a point to init map - my current location
+			mymap.setView([res.coords.latitude, res.coords.longitude], 18);
 	  		var point = L.latLng(res.coords.latitude, res.coords.longitude);
 
-	  		console.log("point",point.distanceTo([-3.00614, -60.02575]));
+	  		// this.setState({currentLocation: [res.coords.latitude, res.coords.longitude]});
+	  		// console.log("point",point.distanceTo([-3.00614, -60.02575]));
 	  		//return the distance bet two points
-			console.log(mymap.distance([res.coords.latitude, res.coords.longitude], [-3.00614, -60.02575]));
+			// console.log(mymap.distance([res.coords.latitude, res.coords.longitude], [-3.00614, -60.02575]));
 		
 		});	
 
 
 		mymap.on('click', function (e){
-			 tomtom.L.popup().setLatLng(e.latlng).setContent(e.latlng.toString()).openOn(mymap);
+			tomtom.L.popup().setLatLng(e.latlng).setContent(e.latlng.toString()).openOn(mymap);
 		});
-
 		
 		mymap._container.focus();
+		
 		this.setState({map: mymap});
+		
 		return mymap;
 	};//end function
 
@@ -120,27 +113,71 @@ class MapRender extends React.Component{
 		 this.setState(prevState => ({
       		enable: !prevState.enable
     	}));
-		
+		this.flyingToLocation();
 		var map = this.state.map;
 		if(this.state.enable == false){
 			map.keyboard.disable();
-			
-		}else{
+
+		} else {
 			map.keyboard.enable();
 			map._container.focus();
 		}
-		// console.log("teste", map);
-	}
+	};
+
+
+	flyingToLocation(){
+		var map = this.state.map;
+		var zoomOptions = {
+			animate: true,
+			duration: 2
+		}
+		map.flyTo([-3.01205, -60.01592], 18, zoomOptions);
+	};//end funciton
 
 	componentDidMount(){
 		var map = this.initMap();
-		// console.log(map.keyboard);
-		// map.keyboard.disable();
-		// console.log("state",this.state.map);
 		
 		this.addMarkerPins(map, -3.01205, -60.01592, "Sao Chico");
 		this.addMarkerPins(map,-3.02776, -60.01493, "Novo Israel");
 		this.addMarkerPins(map, -3.00317, -59.99174, "Monte das Oliveiras");
+		this.addMarkerPins(map, -2.98956, -60.04288, "Taruma");
+
+		// console.log("closest",L.LineUtil.closestPointOnSegment(map, [-3.01205, -60.01592], [-3.02776, -60.01493]));
+		var latlngs = [[-3.01816, -60.02757],[-3.01881, -60.02784],[-3.01809, -60.02699],[-3.01744, -60.02748]];
+		var polygon = L.polygon(latlngs, {color: 'blue'}).addTo(map);
+		// zoom the map to the polygon
+		map.fitBounds(polygon.getBounds());
+
+		console.log("center poligon",polygon.getCenter())
+
+		// var latlngs = [
+		// 	[-3.01904, -60.02693],
+		// 	[-3.01938, -60.02739],
+		// 	[-3.0194, -60.02667]
+		// ];
+		// var polyline = L.polyline(latlngs, {
+		// 	color: 'red'
+		// }).addTo(map);
+		// map.fitBounds(polyline.getBounds());
+
+		var bounds = [
+			[-3.01904, -60.02693],
+			[-3.01938, -60.02739],
+		];
+		L.rectangle(bounds, {
+			color: "#ff7800",
+			weight: 1
+		}).addTo(map);
+		
+		var southWest = L.latLng(-3.01904, -60.02693),
+		northEast = L.latLng(-3.01938, -60.02739),
+		bounds = L.latLngBounds(southWest, northEast);
+		console.log("bounds", bounds.getNorth());
+		console.log("contain", bounds.contains(-3.0189, -60.02589))
+
+		// console.log("layers", map._layers);
+		// console.log(map);
+
 
 	};
 	
