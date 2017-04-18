@@ -173,8 +173,13 @@ class MapRender extends React.Component{
 		northEast = L.latLng(-3.01938, -60.02739),
 		bounds = L.latLngBounds(southWest, northEast);
 		console.log("bounds", bounds.getNorth());
-		console.log("contain", bounds.contains(-3.0189, -60.02589))
+		var position = [[-3.01922, -60.02724],[-3.01884, -60.026]];
+		// console.log("contain", bounds.contains([]))
 
+		position.forEach( function(element, index) {
+			// console.log("element", element);
+			console.log('contains', bounds.contains(element));
+		});
 		// console.log("layers", map._layers);
 		// console.log(map);
 
